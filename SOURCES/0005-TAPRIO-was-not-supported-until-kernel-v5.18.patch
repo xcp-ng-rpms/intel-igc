@@ -1,0 +1,200 @@
+From 78bcb3a52165e6f5345ccccad9e9a53dea1a065c Mon Sep 17 00:00:00 2001
+From: Stephen Cheng <stephen.cheng@cloud.com>
+Date: Fri, 12 Apr 2024 02:21:28 +0100
+Subject: [PATCH 5/5] TAPRIO was not supported until kernel v5.18
+
+Remove TC_SETUP_QDISC_TAPRIO related handling.
+TC_SETUP_QDISC_TAPRIO was introduced in the below commit:
+git describe --contains cf2df74e202d81b09f09d84c2d8903e0e87e9274
+v5.18~19^2~3^2~4
+
+Signed-off-by: Stephen Cheng <stephen.cheng@cloud.com>
+---
+ igc_main.c | 158 -----------------------------------------------------
+ 1 file changed, 158 deletions(-)
+
+diff --git a/igc_main.c b/igc_main.c
+index 631ce79..8b1d77e 100644
+--- a/igc_main.c
++++ b/igc_main.c
+@@ -4856,65 +4856,6 @@ static int igc_save_launchtime_params(struct igc_adapter *adapter, int queue,
+ 	return 0;
+ }
+ 
+-static bool is_base_time_past(ktime_t base_time, const struct timespec64 *now)
+-{
+-	struct timespec64 b;
+-
+-	b = ktime_to_timespec64(base_time);
+-
+-	return timespec64_compare(now, &b) > 0;
+-}
+-
+-static bool validate_schedule(struct igc_adapter *adapter,
+-			      const struct tc_taprio_qopt_offload *qopt)
+-{
+-	int queue_uses[IGC_MAX_TX_QUEUES] = { };
+-	struct timespec64 now;
+-	size_t n;
+-
+-	if (qopt->cycle_time_extension)
+-		return false;
+-
+-	igc_ptp_read(adapter, &now);
+-
+-	/* If we program the controller's BASET registers with a time
+-	 * in the future, it will hold all the packets until that
+-	 * time, causing a lot of TX Hangs, so to avoid that, we
+-	 * reject schedules that would start in the future.
+-	 */
+-	if (!is_base_time_past(qopt->base_time, &now))
+-		return false;
+-
+-	for (n = 0; n < qopt->num_entries; n++) {
+-		const struct tc_taprio_sched_entry *e, *prev;
+-		int i;
+-
+-		prev = n ? &qopt->entries[n - 1] : NULL;
+-		e = &qopt->entries[n];
+-
+-		/* i225 only supports "global" frame preemption
+-		 * settings.
+-		 */
+-		if (e->command != TC_TAPRIO_CMD_SET_GATES)
+-			return false;
+-
+-		for (i = 0; i < adapter->num_tx_queues; i++)
+-			if (e->gate_mask & BIT(i)) {
+-				queue_uses[i]++;
+-
+-				/* There are limitations: A single queue cannot
+-				 * be opened and closed multiple times per cycle
+-				 * unless the gate stays open. Check for it.
+-				 */
+-				if (queue_uses[i] > 1 &&
+-				    !(prev->gate_mask & BIT(i)))
+-					return false;
+-			}
+-	}
+-
+-	return true;
+-}
+-
+ static int igc_tsn_enable_launchtime(struct igc_adapter *adapter,
+ 				     struct tc_etf_qopt_offload *qopt)
+ {
+@@ -4931,111 +4872,12 @@ static int igc_tsn_enable_launchtime(struct igc_adapter *adapter,
+ 	return igc_tsn_offload_apply(adapter);
+ }
+ 
+-static int igc_save_qbv_schedule(struct igc_adapter *adapter,
+-				 struct tc_taprio_qopt_offload *qopt)
+-{
+-	bool queue_configured[IGC_MAX_TX_QUEUES] = { };
+-	u32 start_time = 0, end_time = 0;
+-	size_t n;
+-	int i;
+-
+-	if (!qopt->enable) {
+-		adapter->base_time = 0;
+-		return 0;
+-	}
+-
+-	if (qopt->base_time < 0)
+-		return -ERANGE;
+-
+-	if (adapter->base_time)
+-		return -EALREADY;
+-
+-	if (!validate_schedule(adapter, qopt))
+-		return -EINVAL;
+-
+-	adapter->cycle_time = qopt->cycle_time;
+-	adapter->base_time = qopt->base_time;
+-
+-	for (n = 0; n < qopt->num_entries; n++) {
+-		struct tc_taprio_sched_entry *e = &qopt->entries[n];
+-
+-		end_time += e->interval;
+-
+-		/* If any of the conditions below are true, we need to manually
+-		 * control the end time of the cycle.
+-		 * 1. Qbv users can specify a cycle time that is not equal
+-		 * to the total GCL intervals. Hence, recalculation is
+-		 * necessary here to exclude the time interval that
+-		 * exceeds the cycle time.
+-		 * 2. According to IEEE Std. 802.1Q-2018 section 8.6.9.2,
+-		 * once the end of the list is reached, it will switch
+-		 * to the END_OF_CYCLE state and leave the gates in the
+-		 * same state until the next cycle is started.
+-		 */
+-		if (end_time > adapter->cycle_time ||
+-		    n + 1 == qopt->num_entries)
+-			end_time = adapter->cycle_time;
+-
+-		for (i = 0; i < adapter->num_tx_queues; i++) {
+-			struct igc_ring *ring = adapter->tx_ring[i];
+-
+-			if (!(e->gate_mask & BIT(i)))
+-				continue;
+-
+-			/* Check whether a queue stays open for more than one
+-			 * entry. If so, keep the start and advance the end
+-			 * time.
+-			 */
+-			if (!queue_configured[i])
+-				ring->start_time = start_time;
+-			ring->end_time = end_time;
+-
+-			queue_configured[i] = true;
+-		}
+-
+-		start_time += e->interval;
+-	}
+-
+-	/* Check whether a queue gets configured.
+-	 * If not, set the start and end time to be end time.
+-	 */
+-	for (i = 0; i < adapter->num_tx_queues; i++) {
+-		if (!queue_configured[i]) {
+-			struct igc_ring *ring = adapter->tx_ring[i];
+-
+-			ring->start_time = end_time;
+-			ring->end_time = end_time;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-static int igc_tsn_enable_qbv_scheduling(struct igc_adapter *adapter,
+-					 struct tc_taprio_qopt_offload *qopt)
+-{
+-	struct igc_hw *hw = &adapter->hw;
+-	int err;
+-
+-	if (hw->mac.type != igc_i225)
+-		return -EOPNOTSUPP;
+-
+-	err = igc_save_qbv_schedule(adapter, qopt);
+-	if (err)
+-		return err;
+-
+-	return igc_tsn_offload_apply(adapter);
+-}
+-
+ static int igc_setup_tc(struct net_device *dev, enum tc_setup_type type,
+ 			void *type_data)
+ {
+ 	struct igc_adapter *adapter = netdev_priv(dev);
+ 
+ 	switch (type) {
+-	case TC_SETUP_QDISC_TAPRIO:
+-		return igc_tsn_enable_qbv_scheduling(adapter, type_data);
+-
+ 	case TC_SETUP_QDISC_ETF:
+ 		return igc_tsn_enable_launchtime(adapter, type_data);
+ 
+-- 
+2.41.0
+

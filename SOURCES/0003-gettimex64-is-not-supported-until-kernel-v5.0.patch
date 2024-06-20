@@ -1,0 +1,57 @@
+From b838c426e8ea57bf9d1ce630d66bc691923009fb Mon Sep 17 00:00:00 2001
+From: Stephen Cheng <stephen.cheng@cloud.com>
+Date: Thu, 11 Apr 2024 09:31:55 +0100
+Subject: [PATCH 3/5] gettimex64 is not supported until kernel v5.0
+
+gettimx64 was added in below commit
+git describe --contains 361800876f80da3915c46e388fc682532228b2c3
+v5.0-rc1~129^2~340^2~5
+
+This patch references the igb driver code.
+
+Signed-off-by: Stephen Cheng <stephen.cheng@cloud.com>
+---
+ igc_ptp.c | 13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/igc_ptp.c b/igc_ptp.c
+index 25b238c..4450021 100644
+--- a/igc_ptp.c
++++ b/igc_ptp.c
+@@ -83,21 +83,16 @@ static int igc_ptp_adjtime_i225(struct ptp_clock_info *ptp, s64 delta)
+ 	return 0;
+ }
+ 
+-static int igc_ptp_gettimex64_i225(struct ptp_clock_info *ptp,
+-				   struct timespec64 *ts,
+-				   struct ptp_system_timestamp *sts)
++static int igc_ptp_gettime_i225(struct ptp_clock_info *ptp,
++				   struct timespec64 *ts)
+ {
+ 	struct igc_adapter *igc = container_of(ptp, struct igc_adapter,
+ 					       ptp_caps);
+-	struct igc_hw *hw = &igc->hw;
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&igc->tmreg_lock, flags);
+ 
+-	ptp_read_system_prets(sts);
+-	ts->tv_nsec = rd32(IGC_SYSTIML);
+-	ts->tv_sec = rd32(IGC_SYSTIMH);
+-	ptp_read_system_postts(sts);
++	igc_ptp_read(igc, ts);
+ 
+ 	spin_unlock_irqrestore(&igc->tmreg_lock, flags);
+ 
+@@ -502,7 +497,7 @@ void igc_ptp_init(struct igc_adapter *adapter)
+ 		adapter->ptp_caps.max_adj = 62499999;
+ 		adapter->ptp_caps.adjfine = igc_ptp_adjfine_i225;
+ 		adapter->ptp_caps.adjtime = igc_ptp_adjtime_i225;
+-		adapter->ptp_caps.gettimex64 = igc_ptp_gettimex64_i225;
++		adapter->ptp_caps.gettime64 = igc_ptp_gettime_i225;
+ 		adapter->ptp_caps.settime64 = igc_ptp_settime_i225;
+ 		adapter->ptp_caps.enable = igc_ptp_feature_enable_i225;
+ 		break;
+-- 
+2.41.0
+

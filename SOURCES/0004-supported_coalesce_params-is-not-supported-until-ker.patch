@@ -1,0 +1,30 @@
+From c99422b8330ff4eb72a465112d242cdb0a9d679b Mon Sep 17 00:00:00 2001
+From: Stephen Cheng <stephen.cheng@cloud.com>
+Date: Thu, 11 Apr 2024 09:50:41 +0100
+Subject: [PATCH 4/5] supported_coalesce_params is not supported until kernel
+ v5.7
+
+supported_coalesce_params was added in this commit
+git describe --contains 95cddcb5cc202d3f2499596b9af5b77536c5f86a
+v5.7-rc1~146^2~244^2~11
+
+Signed-off-by: Stephen Cheng <stephen.cheng@cloud.com>
+---
+ igc_ethtool.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/igc_ethtool.c b/igc_ethtool.c
+index 9b01912..c450300 100644
+--- a/igc_ethtool.c
++++ b/igc_ethtool.c
+@@ -1916,7 +1916,6 @@ static void igc_ethtool_diag_test(struct net_device *netdev,
+ }
+ 
+ static const struct ethtool_ops igc_ethtool_ops = {
+-	.supported_coalesce_params = ETHTOOL_COALESCE_USECS,
+ 	.get_drvinfo		= igc_ethtool_get_drvinfo,
+ 	.get_regs_len		= igc_ethtool_get_regs_len,
+ 	.get_regs		= igc_ethtool_get_regs,
+-- 
+2.41.0
+

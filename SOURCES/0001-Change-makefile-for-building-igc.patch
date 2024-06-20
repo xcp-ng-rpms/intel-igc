@@ -1,0 +1,28 @@
+From 4c2746a406f4ccf452d87a934e690ac4ce9c34a6 Mon Sep 17 00:00:00 2001
+From: Stephen Cheng <stephen.cheng@cloud.com>
+Date: Thu, 11 Apr 2024 07:34:41 +0100
+Subject: [PATCH 1/5] Change makefile for building igc
+
+igc driver is not included in the makefile of XS8(kernel 4.19)`
+
+Signed-off-by: Stephen Cheng <stephen.cheng@cloud.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 1c3051d..ba572d6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,7 @@
+ # Intel(R) I225-LM/I225-V 2.5G Ethernet Controller
+ #
+ 
+-obj-$(CONFIG_IGC) += igc.o
++obj-m += igc.o
+ 
+ igc-objs := igc_main.o igc_mac.o igc_i225.o igc_base.o igc_nvm.o igc_phy.o \
+ igc_diag.o igc_ethtool.o igc_ptp.o igc_dump.o igc_tsn.o
+-- 
+2.41.0
+
