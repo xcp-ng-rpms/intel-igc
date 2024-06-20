@@ -1,0 +1,139 @@
+
+### Add ethtool show version support from later driver source
+### Also show XCP driver version
+
+diff --git a/igc_defines.h b/igc_defines.h
+index 352b50d..fe6ff3b 100644
+--- a/igc_defines.h
++++ b/igc_defines.h
+@@ -160,6 +160,7 @@
+ #define IGC_NVM_RW_REG_START	1    /* Start operation */
+ #define IGC_NVM_RW_ADDR_SHIFT	2    /* Shift to the address bits */
+ #define IGC_NVM_POLL_READ	0    /* Flag for polling for read complete */
++#define IGC_NVM_DEV_STARTER	5    /* Dev_starter Version */
+ 
+ /* NVM Word Offsets */
+ #define NVM_CHECKSUM_REG		0x003F
+diff --git a/igc.h b/igc.h
+index ea225bb..6e3c179 100644
+--- a/igc.h
++++ b/igc.h
+@@ -225,6 +225,7 @@ struct igc_adapter {
+ 	struct timecounter tc;
+ 	struct timespec64 prev_ptp_time; /* Pre-reset PTP clock */
+ 	ktime_t ptp_reset_start; /* Reset time in clock mono */
++	char fw_version[32];
+ };
+ 
+ void igc_up(struct igc_adapter *adapter);
+@@ -250,6 +251,7 @@ void igc_rings_dump(struct igc_adapter *adapter);
+ void igc_regs_dump(struct igc_adapter *adapter);
+ 
+ extern char igc_driver_name[];
++extern const char igc_driver_version[];
+ 
+ #define IGC_REGS_LEN			740
+ 
+diff --git a/igc_ethtool.c b/igc_ethtool.c
+index c450300..9557721 100644
+--- a/igc_ethtool.c
++++ b/igc_ethtool.c
+@@ -129,10 +129,28 @@ static void igc_ethtool_get_drvinfo(struct net_device *netdev,
+ 				    struct ethtool_drvinfo *drvinfo)
+ {
+ 	struct igc_adapter *adapter = netdev_priv(netdev);
++	struct igc_hw *hw = &adapter->hw;
++	u16 nvm_version = 0;
++	u16 gphy_version;
+ 
+ 	strlcpy(drvinfo->driver,  igc_driver_name, sizeof(drvinfo->driver));
++	strlcpy(drvinfo->version, igc_driver_version, sizeof(drvinfo->version));
++
++	/* NVM image version is reported as firmware version for i225 device */
++	hw->nvm.ops.read(hw, IGC_NVM_DEV_STARTER, 1, &nvm_version);
++
++	/* gPHY firmware version is reported as PHY FW version */
++	gphy_version = igc_read_phy_fw_version(hw);
++
++	scnprintf(adapter->fw_version,
++			sizeof(adapter->fw_version),
++			"%x:%x",
++			nvm_version,
++			gphy_version);
++
++	strscpy(drvinfo->fw_version, adapter->fw_version,
++		sizeof(drvinfo->fw_version));
+ 
+-	/* add fw_version here */
+ 	strlcpy(drvinfo->bus_info, pci_name(adapter->pdev),
+ 		sizeof(drvinfo->bus_info));
+ 
+@@ -549,6 +567,24 @@ static int igc_ethtool_set_eeprom(struct net_device *netdev,
+ 	return ret_val;
+ }
+ 
++/**
++ * igc_read_phy_fw_version - Read gPHY firmware version
++ * @hw: pointer to the HW structure
++ */
++u16 igc_read_phy_fw_version(struct igc_hw *hw)
++{
++	struct igc_phy_info *phy = &hw->phy;
++	u16 gphy_version = 0;
++	u16 ret_val;
++
++	/* NVM image version is reported as firmware version for i225 device */
++	ret_val = phy->ops.read_reg(hw, IGC_GPHY_VERSION, &gphy_version);
++	if (ret_val)
++		hw_dbg("igc_phy: read wrong gphy version\n");
++
++	return gphy_version;
++}
++
+ static void igc_ethtool_get_ringparam(struct net_device *netdev,
+ 				      struct ethtool_ringparam *ring)
+ {
+diff --git a/igc_phy.h b/igc_phy.h
+index 25cba33..1b03137 100644
+--- a/igc_phy.h
++++ b/igc_phy.h
+@@ -17,5 +17,6 @@ void igc_power_up_phy_copper(struct igc_hw *hw);
+ void igc_power_down_phy_copper(struct igc_hw *hw);
+ s32 igc_write_phy_reg_gpy(struct igc_hw *hw, u32 offset, u16 data);
+ s32 igc_read_phy_reg_gpy(struct igc_hw *hw, u32 offset, u16 *data);
++u16 igc_read_phy_fw_version(struct igc_hw *hw);
+ 
+ #endif
+diff --git a/igc_regs.h b/igc_regs.h
+index a273e1c..f010ea7 100644
+--- a/igc_regs.h
++++ b/igc_regs.h
+@@ -13,6 +13,7 @@
+ #define IGC_MDICNFG		0x00E04  /* MDC/MDIO Configuration - RW */
+ #define IGC_CONNSW		0x00034  /* Copper/Fiber switch control - RW */
+ #define IGC_I225_PHPM		0x00E14  /* I225 PHY Power Management */
++#define IGC_GPHY_VERSION	0x0001E  /* I225 gPHY Firmware Version */
+ 
+ /* Internal Packet Buffer Size Registers */
+ #define IGC_RXPBS		0x02404  /* Rx Packet Buffer Size - RW */
+diff --git a/igc_main.c b/igc_main.c
+index 8b1d77e..010a7c3 100644
+--- a/igc_main.c
++++ b/igc_main.c
+@@ -19,6 +19,7 @@
+ #include "igc_tsn.h"
+ 
+ #define DRV_SUMMARY	"Intel(R) 2.5G Ethernet Linux Driver"
++#define DRV_VERSION	"5.10.214-1"
+ 
+ #define DEFAULT_MSG_ENABLE (NETIF_MSG_DRV | NETIF_MSG_PROBE | NETIF_MSG_LINK)
+ 
+@@ -32,6 +33,7 @@ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all)");
+ 
+ char igc_driver_name[] = "igc";
+ static const char igc_driver_string[] = DRV_SUMMARY;
++const char igc_driver_version[] = DRV_VERSION;
+ static const char igc_copyright[] =
+ 	"Copyright(c) 2018 Intel Corporation.";
+ 
+

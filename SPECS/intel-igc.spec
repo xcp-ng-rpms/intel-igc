@@ -30,6 +30,10 @@ Patch2: 0003-gettimex64-is-not-supported-until-kernel-v5.0.patch
 Patch3: 0004-supported_coalesce_params-is-not-supported-until-ker.patch
 Patch4: 0005-TAPRIO-was-not-supported-until-kernel-v5.18.patch
 
+# XCP-ng specific patches
+Patch1000: 1000-showversion.patch
+Patch1001: 1001-i226.patch
+
 BuildRequires: kernel-devel
 %{?_cov_buildrequires}
 Provides: vendor-driver
@@ -78,6 +82,7 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %changelog
 * Thu Jun 20 2024 Thierry Escande <thierry.escande@vates.tech> - 5.10.214-3.1
 - Obsoletes igc-module RPM
+- Import XCP-ng specific patches from obsolete igc-module RPM
 
 * Mon May 06 2024 Stephen Cheng <stephen.cheng@cloud.com> - Version: 5.10.214-3
 - CP-48894: Modify checksum
