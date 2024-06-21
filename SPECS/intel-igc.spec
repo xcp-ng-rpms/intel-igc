@@ -34,6 +34,7 @@ Patch4: 0005-TAPRIO-was-not-supported-until-kernel-v5.18.patch
 Patch1000: 1000-showversion.patch
 Patch1001: 1001-i226.patch
 
+BuildRequires: gcc
 BuildRequires: kernel-devel
 %{?_cov_buildrequires}
 Provides: vendor-driver
@@ -83,6 +84,7 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 * Thu Jun 20 2024 Thierry Escande <thierry.escande@vates.tech> - 5.10.214-3.1
 - Obsoletes igc-module RPM
 - Import XCP-ng specific patches from obsolete igc-module RPM
+- Add BuildRequires for gcc
 
 * Mon May 06 2024 Stephen Cheng <stephen.cheng@cloud.com> - Version: 5.10.214-3
 - CP-48894: Modify checksum
