@@ -21,7 +21,7 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.214
-Release: %{?xsrel}%{?dist}
+Release: %{?xsrel}.1%{?dist}
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -30,12 +30,20 @@ Patch2: 0003-gettimex64-is-not-supported-until-kernel-v5.0.patch
 Patch3: 0004-supported_coalesce_params-is-not-supported-until-ker.patch
 Patch4: 0005-TAPRIO-was-not-supported-until-kernel-v5.18.patch
 
+# XCP-ng specific patches
+Patch1000: 1000-showversion.patch
+Patch1001: 1001-i226.patch
+
+BuildRequires: gcc
 BuildRequires: kernel-devel
 %{?_cov_buildrequires}
 Provides: vendor-driver
 Requires: kernel-uname-r = %{kernel_version}
 Requires(post): /usr/sbin/depmod
 Requires(postun): /usr/sbin/depmod
+
+# This RPM obsoletes XCP-ng specific RPM igc-module
+Obsoletes: igc-module < 5.10.200-2
 
 %description
 %{vendor_name} %{driver_name} device drivers for the Linux Kernel
@@ -73,6 +81,11 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Thu Jun 20 2024 Thierry Escande <thierry.escande@vates.tech> - 5.10.214-3.1
+- Obsoletes igc-module RPM
+- Import XCP-ng specific patches from obsolete igc-module RPM
+- Add BuildRequires for gcc
+
 * Mon May 06 2024 Stephen Cheng <stephen.cheng@cloud.com> - Version: 5.10.214-3
 - CP-48894: Modify checksum
 - The checksum was wrongly grenerated in the previous commit due to xenpkg upgrade
