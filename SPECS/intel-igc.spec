@@ -1,8 +1,3 @@
-%global package_speccommit 525b160e0537cadf8032b68622d1f6962d518feb
-%global usver 5.10.214
-%global xsver 3
-%global xsrel %{xsver}%{?xscount}%{?xshash}
-%global package_srccommit 5.10.214
 %define vendor_name Intel
 %define vendor_label intel
 %define driver_name igc
@@ -20,8 +15,8 @@
 
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
-Version: 5.10.214
-Release: %{?xsrel}.1%{?dist}
+Version: 5.10.226
+Release: 1%{?dist}
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -81,6 +76,9 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Fri Dec 20 2024 Andrew Lindh <andrew@netplex.net> - 5.10.226-1
+- Update with kernel source 5.10.226 to fix minor lock bug
+
 * Thu Jun 20 2024 Thierry Escande <thierry.escande@vates.tech> - 5.10.214-3.1
 - Obsoletes igc-module RPM
 - Import XCP-ng specific patches from obsolete igc-module RPM
