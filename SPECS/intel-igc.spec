@@ -37,7 +37,6 @@ BuildRequires: gcc
 BuildRequires: kernel-devel
 %{?_cov_buildrequires}
 Provides: vendor-driver
-Provides: %{vendor_label}-%{driver_name}
 Requires: kernel-uname-r = %{kernel_version}
 Requires(post): /usr/sbin/depmod
 Requires(postun): /usr/sbin/depmod
@@ -81,6 +80,9 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Fri Dec 20 2024 Andrew Lindh <andrew@netplex.net> - 5.10.226-1
+- Remove extra Provides - no code changes
+
 * Fri Sep 20 2024 Andrew Lindh <andrew@netplex.net> - 5.10.226-1
 - Update with kernel source 5.10.226 to fix minor lock bug
 - Add Provides:intel-igc to the package info
