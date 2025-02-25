@@ -16,7 +16,7 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.226
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -39,6 +39,7 @@ Requires(postun): /usr/sbin/depmod
 
 # This RPM obsoletes XCP-ng specific RPM igc-module
 Obsoletes: igc-module < 5.10.200-2
+Provides: igc-module = %{version}-%{release}
 
 %description
 %{vendor_name} %{driver_name} device drivers for the Linux Kernel
@@ -76,6 +77,9 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Tue Feb 25 2025 Gaëtan Lehmann <gaetan.lehmann@vates.tech> - 5.10.226-2
+- fix missing provides for the old package name
+
 * Fri Dec 20 2024 Andrew Lindh <andrew@netplex.net> - 5.10.226-1
 - Update with kernel source 5.10.226 to fix minor lock bug
 
