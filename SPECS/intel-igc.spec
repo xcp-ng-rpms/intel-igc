@@ -21,7 +21,7 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.214
-Release: %{?xsrel}.2%{?dist}
+Release: %{?xsrel}.3%{?dist}
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -82,6 +82,9 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Tue Feb 25 2025 Gaëtan Lehmann <gaetan.lehmann@vates.tech> - 5.10.214-3.3
+- fix missing provides for the old package name
+
 * Thu Jun 20 2024 Thierry Escande <thierry.escande@vates.tech> - 5.10.214-3.1
 - Obsoletes igc-module RPM
 - Import XCP-ng specific patches from obsolete igc-module RPM
