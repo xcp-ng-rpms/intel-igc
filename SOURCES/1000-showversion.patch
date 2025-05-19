@@ -1,6 +1,16 @@
 
 ### Add ethtool show version support from later driver source
+### Add MODULE_VERSION
 ### Also show XCP driver version
+
+##########
+## NOTE ##
+##########
+## This depends on RPM build adding DRV_VERSION to igc.h
+##
+## Must be included in spec file:
+##   /usr/bin/echo '#define DRV_VERSION "%{version}"' >> igc.h
+##
 
 diff --git a/igc_defines.h b/igc_defines.h
 index 352b50d..fe6ff3b 100644
@@ -124,7 +134,7 @@ index 8b1d77e..010a7c3 100644
  #include "igc_tsn.h"
  
  #define DRV_SUMMARY	"Intel(R) 2.5G Ethernet Linux Driver"
-+#define DRV_VERSION	"5.10.226-1"
++/* DRV_VERSION is added to igc.h by RPM build from spec file */
  
  #define DEFAULT_MSG_ENABLE (NETIF_MSG_DRV | NETIF_MSG_PROBE | NETIF_MSG_LINK)
  
@@ -137,3 +147,13 @@ index 8b1d77e..010a7c3 100644
  	"Copyright(c) 2018 Intel Corporation.";
  
 
+--- a/igc_main.c	2025-05-19 20:35:13.381367239 +0000
++++ b/igc_main.c	2025-05-19 20:35:38.141580448 +0000
+@@ -29,6 +29,7 @@
+ MODULE_LICENSE("GPL v2");
+ module_param(debug, int, 0);
+ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all)");
++MODULE_VERSION(DRV_VERSION);
+ 
+ char igc_driver_name[] = "igc";
+ static const char igc_driver_string[] = DRV_SUMMARY;
