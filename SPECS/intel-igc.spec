@@ -15,8 +15,8 @@
 
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
-Version: 5.10.226
-Release: 2%{?dist}
+Version: 5.10.237
+Release: 1%{?dist}
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -49,6 +49,9 @@ version %{kernel_version}.
 %autosetup -p1 -n %{name}-%{version}
 %{?_cov_prepare}
 
+# Set module version to upstream kernel release
+/usr/bin/echo '#define DRV_VERSION "%{version}"' >> igc.h
+
 %build
 %{?_cov_wrap} %{make_build} -C /lib/modules/%{kernel_version}/build M=$(pwd) KSRC=/lib/modules/%{kernel_version}/build modules
 
@@ -77,6 +80,11 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Mon May 19 2025 Andrew Lindh <andrew@netplex.net> - 5.10.237-1
+- Minor PTP fixes from upstream
+- Make show version number dynamic based on RPM build spec file
+- Add MODULE_VERSION
+
 * Tue Feb 25 2025 Gaëtan Lehmann <gaetan.lehmann@vates.tech> - 5.10.226-2
 - fix missing provides for the old package name
 
