@@ -16,7 +16,10 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.226
-Release: 2%{?dist}
+Release: 3%{?dist}
+# Built against new kABI after cip rebase
+Requires: xcpng-kernel-kabi = 4.19.325-cip134+
+
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -77,6 +80,9 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Mon Aug 31 2026 Quentin Casasnovas <quentin.casasnovas@vates.tech> - 5.10.226-3
+- Rebuild for kernel v4.19.325-cip134
+
 * Tue Feb 25 2025 Gaëtan Lehmann <gaetan.lehmann@vates.tech> - 5.10.226-2
 - fix missing provides for the old package name
 
