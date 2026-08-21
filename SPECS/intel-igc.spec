@@ -16,7 +16,10 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.226
-Release: 2%{?dist}
+Release: 3%{?dist}
+# Built against new kABI after cip rebase
+Requires: xcpng-kernel-kabi = 4.19.325-cip134+
+
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
