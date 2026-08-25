@@ -16,7 +16,7 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.226
-Release: 3%{?dist}
+Release: 3.0.cip134.1%{?dist}
 # Built against new kABI after cip rebase
 Requires: xcpng-kernel-kabi = 4.19.325-cip134+
 
