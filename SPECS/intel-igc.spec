@@ -16,7 +16,7 @@
 Summary: %{vendor_name} %{driver_name} device drivers
 Name: %{vendor_label}-%{driver_name}
 Version: 5.10.226
-Release: 2%{?dist}
+Release: 2.0.kernelpreview.1%{?dist}
 License: GPL
 Source0: intel-igc.tar.gz
 Patch0: 0001-Change-makefile-for-building-igc.patch
@@ -30,7 +30,7 @@ Patch1000: 1000-showversion.patch
 Patch1001: 1001-i226.patch
 
 BuildRequires: gcc
-BuildRequires: kernel-devel
+BuildRequires: kernel-devel >= 4.19.325-cip137.8.0.46.16
 %{?_cov_buildrequires}
 Provides: vendor-driver
 Requires: kernel-uname-r = %{kernel_version}
@@ -77,6 +77,9 @@ find %{buildroot}/lib/modules/%{kernel_version} -name "*.ko" -type f | xargs chm
 %{?_cov_results_package}
 
 %changelog
+* Mon Nov 16 2026 Quentin Casasnovas <quentin.casasnovas@vates.tech> - 5.10.226-2.0.kernelpreview.1
+- Rebuild for kernel v4.19.325-cip137
+
 * Tue Feb 25 2025 Gaëtan Lehmann <gaetan.lehmann@vates.tech> - 5.10.226-2
 - fix missing provides for the old package name
 
